@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>autoexcel</title>
+	<style>
+		body {
+			font-size: 14px;
+			background-color: #f4f4f4;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		section {
+			width: 1200px;
+			height: 650px;
+			margin: auto;
+			padding-top: 8px;
+			margin-top: 100px;
+			position: relative;
+			background-color: #fff;
+			box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2),
+				0 25px 50px 0 rgba(0, 0, 0, 0.1);
+		}
+
+		.btns {
+			width: 100%;
+			height: 150px;
+		}
+
+		.tipd,
+		.tipt {
+			width: 50%;
+			height: 60px;
+			line-height: 2.5;
+			font-size: 22px;
+			font-weight: 300;
+			border: 1px solid #ddd;
+			text-align: center;
+			display: inline-block;
+			background-color: #FAFAFA;
+		}
+
+
+
+		h2 {
+			font-size: 30px;
+			font-weight: 300;
+			margin: 20px;
+		}
+
+		p {
+			text-indent: 10;
+			margin-left: 30px;
+		}
+
+		button {
+			top: 30px;
+			right: 10px;
+			height: 50px;
+			width: 100px;
+			color: #fff;
+			border: none;
+			outline: none;
+			font-size: 18px;
+			position: absolute;
+			background-color: #64ADE5;
+		}
+
+		.gento,
+		.genback {
+			left: 50%;
+			transform: translateX(-50%);
+		}
+
+		.gento {
+			top: 200px;
+		}
+
+		.genback {
+			top: 270px;
+		}
+
+		.bar,
+		.demo {
+			width: 520px;
+			height: auto;
+			outline: none;
+			overflow-y: auto;
+			overflow-x: auto;
+			min-height: 465px;
+			max-height: 470px;
+			padding-left: 20px;
+			border: 2px solid #ddd;
+			border-top-width: 0px;
+		}
+
+		.bar,
+		.tipd {
+			float: left;
+		}
+
+		.demo,
+		.tipt {
+			float: right;
+		}
+
+		.demo {
+			overflow-x: auto;
+		}
+
+		table {
+			width: 400px;
+			border-collapse: collapse;
+		}
+
+		thead {
+			border: 1px solid #ddd;
+			background-color: #eee;
+		}
+
+		tr,
+		td {
+			text-align: center;
+			border: 1px solid #ddd;
+		}
+	</style>
+</head>
+
+<body>
+	<section>
+		<div class="btns">
+			<div class="tip">
+				<h2>Autogenerate</h2>
+				<p> Automatically generate table and table to excel file </p>
+			</div>
+			<button class="autoexcel">生成excel</button>
+			<button class="gento">→</button>
+			<button class="genback">←</button>
+			<span class="tipd"> data</span>
+			<span class="tipt">table</span>
+		</div>
+		<div class="bar" contenteditable="true">
+			data = [<br />
+			{"name" :"john", "age":18, "sex" :"man", "high":"190cm", "weight":"170"},<br />{"name" :"amiy", "age":30, "sex"
+			:"woman","high":"160cm", "weight":"120"},<br />{"name" :"john", "age":18, "sex" :"man", "high":"190cm",
+			"weight":"170"}<br />
+			]<br />
+			head = {"name" :"姓名", "age":"年龄", "sex" :"性别", "high":"身高", "weight":"体重"}
+		</div>
+		<div class="demo" contenteditable="true"></div>
+	</section>
+	<script>
+		class Autoexcel {
+			constructor(text) {
+				this.box = document.querySelector('.demo')
+				this.init(text)
+			}
+			//初始化
+			init(text) {
+				if (text) {
+					var [head, data] = this.parseData(text)
+					this.head = this.setData(head)
+					this.data = this.setData(data)
+				}
+			}
+
+			setHead(head) {
+				var inhead = { name: '姓名', age: '年龄', sex: '性别', high: '身高', weight: '体重' }
+				return head || inhead
+			}
+
+			setData(data) {
+				var indata = [
+					{ name: 'john', age: 18, sex: 'man', high: '190cm', weight: '170' },
+					{ name: 'amiy', age: 30, sex: 'woman', high: '160cm', weight: '120' },
+					{ name: 'john', age: 18, sex: 'man', high: '190cm', weight: '170' }
+				]
+				return data || indata
+			}
+
+			//生成table
+			autotable() {
+				try {
+					var nd = document.getElementById('datatab')
+					if (nd) {
+						this.box.removeChild(nd)
+					}
+					this.table = document.createElement('table')
+
+					var thead = document.createElement('thead')
+					var tbody = document.createElement('tbody')
+					this.table.appendChild(thead)
+					this.table.appendChild(tbody)
+
+
+					//thead
+					var tr = document.createElement('tr')
+					for (var key in this.head) {
+						var th = document.createElement('th')
+						th.innerHTML = key + "(" + this.head[key] + ")"
+						tr.appendChild(th)
+					}
+					thead.appendChild(tr)
+
+					//tbody
+					for (var i = 0; i < this.data.length; i++) {
+						var row = this.data[i]
+						var tr = document.createElement('tr')
+
+						for (var key in this.head) {
+							var td = document.createElement('td')
+							td.innerHTML = row[key]
+							tr.appendChild(td)
+						}
+						tbody.appendChild(tr)
+					}
+					this.table.id = 'datatab'
+					this.box.appendChild(this.table)
+				} catch (e) {
+					console.log(e)
+				}
+			}
+			//生成文件
+			autoFile(id) {
+				//自动生成文件
+				var idTmr
+				var tableToExcel = (function () {
+					var uri = 'data:application/vnd.ms-excel;base64,',
+						template = '<html><head><meta charset="UTF-8"></head><body><table>{table}</table></body></html>',
+						base64 = function (s) {
+							return window.btoa(unescape(encodeURIComponent(s)))
+						},
+						format = function (s, c) {
+							return s.replace(/{(\w+)}/g, function (m, p) { return c[p]; })
+						}
+					return function (table, name) {
+						if (!table.nodeType) table = document.getElementById(table)
+						var ctx = { worksheet: name || 'Worksheet', table: table.innerHTML }
+						window.location.href = uri + base64(format(template, ctx))
+					}
+				})()
+
+				if (this.getExplorer() == 'ie') {
+					console.log(id)
+					debugger
+					var curTbl = document.getElementById(id)
+					var oXL = new ActiveXObject("Excel.Application") //打开excel软件,创建excel对象
+					var oWB = oXL.Workbooks.Add()   //获取workbook对象
+					var xlsheet = oWB.Worksheets(1)   // 激活当前sheet
+					var sel = document.body.createTextRange()
+					sel.moveToElementText(curTbl) //把表格中的内容移到textRange中
+					sel.select()  //全选textrange中内容
+					sel.execCommand("Copy") //复制
+					xlsheet.Paste()  //粘贴
+					oXL.Visible = true //设置excel可见属性
+
+					try {
+						var fname = oXL.Application.GetSaveAsFilename("Excel.xls", "Excel Spreadsheets (*.xls), *.xls")
+					} catch (e) {
+						print("Nested catch caught " + e)
+
+					} finally {
+
+						oWB.SaveAs(fname)
+						oWB.Close(savechanges = false)
+						oXL.Quit()
+						oXL = null
+						idTmr = window.setInterval("cleanUp();", 1)
+					}
+				} else {
+					tableToExcel('datatab')
+				}
+				function cleanUp() {
+					window.clearInterval(idTmr)
+					CollectGarbage()
+				}
+			}
+			//获取当前浏览器
+			getExplorer() {
+				var exp = window.navigator.userAgent
+				if (exp.indexOf('MSIE') >= 0) return 'ie'
+				else if (exp.indexOf('Firefox') >= 0) return 'Firefox'
+				else if (exp.indexOf('Chrome') >= 0) return 'Chrome'
+				else if (exp.indexOf('Opera') >= 0) return 'Opera'
+				else if (exp.indexOf('Safari') >= 0) return 'Safari'
+			}
+			//解析数据
+			parseData(text) {
+				// body...
+				text = text.replace(/\s/g, '')
+				if (text) {
+					var idx = text.indexOf('data=')
+					var dex = text.indexOf('head=')
+
+					var res, str
+					if (idx == 0) {
+						res = text.slice(idx + 'data='.length, dex)
+						str = text.slice(dex + 'head='.length)
+					}
+					if (dex == 0) {
+						str = text.slice(dex + 'head='.length, idx)
+						res = text.slice(idx + 'data='.length)
+					}
+
+					return [this.ParseJSON(str), this.ParseJSON(res)]
+				}
+				return [null, null]
+			}
+
+			//字符串解析对象
+			ParseJSON(str) {
+
+				var i = 0
+				// var str = '{"a":[1,2.35,3,{"c":true,"d":false,"e":["foo","bar",null]}]}'
+
+				return parseValue()
+				//递归下降
+
+				function parseValue() {
+					if (str[i] == '{') {
+						return parseObject()
+					}
+					if (str[i] == '[') {
+						return parseArray()
+					}
+					if (str[i] == '"') {
+						return parseString()
+					}
+					if (str[i] == 't') {
+						return parseTrue()
+					}
+					if (str[i] == 'f') {
+						return parseFalse()
+					}
+					if (str[i] == 'n') {
+						return parseNull()
+					}
+					return parseNumber()
+				}
+				function parseArray() {
+					var result = []
+
+					i++
+
+					while (true) {
+						if (str[i] == ']') {
+							i++
+							break
+						}
+						if (str[i] == ',') {
+							i++
+						}
+						var value = parseValue()
+						result.push(value)
+					}
+
+					return result
+				}
+
+
+				// {"foo":"bar","baz":2}
+				function parseObject() {
+					var result = {}
+
+					i++//跳过 '{'
+
+					while (true) {
+						if (str[i] == '}') {
+							i++//跳过 '}'
+							break
+						}
+						if (str[i] == ',') {
+							i++
+						}
+						var key = parseString()
+						i++
+						var value = parseValue()
+						result[key] = value
+					}
+
+					return result
+				}
+
+				function parseString() {
+					// "foobar"
+					i++
+					var start = i
+					while (str[i] !== '"') {
+						i++
+					}
+					var result = str.slice(start, i)
+					i++
+					return result
+				}
+
+				function parseTrue() {
+					//[1,true,23]
+					i += 4
+					return true
+				}
+
+				function parseFalse() {
+					i += 5
+					return false
+				}
+
+				function parseNull() {
+					i += 4
+					return null
+				}
+
+				function parseNumber() {
+					//[1,222223,3.454243]
+					var start = i
+					while (isNumChar(str[i])) {
+						i++
+					}
+					var numStr = str.slice(start, i)
+					return parseFloat(numStr)
+				}
+
+				function isNumChar(c) {
+					return /^[0-9\.\-\+e]$/.test(c)
+				}
+			}
+
+			parseTable(tab) {
+				var tab = document.getElementById('datatab')
+				var head = {}, keys = []
+				var thead = tab.tHead.rows
+
+				if (thead) {
+					var row = thead[0].children
+					for (var i = 0; i < row.length; i++) {
+						var r = row[i].innerText
+						var x = r.indexOf("(")
+						var y = r.indexOf(")")
+						var key = r.slice(0, x)
+						keys.push(key)
+						head[key] = r.slice(x + 1, y)
+					}
+				}
+
+				var data = []
+				var tbody = tab.tBodies[0].rows
+				for (var j = 0; j < tbody.length; j++) {
+					var res = {}
+					var row = tbody[j].children
+					for (var i = 0; i < row.length; i++) {
+						res[keys[i]] = row[i].innerText
+					}
+					data.push(res)
+				}
+
+				return 'head = ' + this.StringifyJSON(head) + '<br/>data = ' + this.StringifyJSON(data)
+			}
+			//数据转换为字符串
+			StringifyJSON(value) {
+				if (Array.isArray(value)) {
+					return '[' + value.map(it => this.StringifyJSON(it)).join(',') + ']'
+				}
+				if (typeof value === 'number') {
+					return value.toString()
+				}
+				if (value === true) {
+					return 'true'
+				}
+				if (value === false) {
+					return 'false'
+				}
+				if (value === null) {
+					return 'null'
+				}
+				if (typeof value == 'string') {
+					return '"' + value + '"'
+				}
+				if (typeof value === 'object') {
+					var str = '{'
+					for (var key in value) {
+						var val = value[key]
+						str += '"' + key + '":' + this.StringifyJSON(val) + ','
+					}
+					return str.slice(0, -1) + '}'
+				}
+			}
+		}
+
+		var gento = document.querySelector('.gento')
+		var genback = document.querySelector('.genback')
+		var autoexcel = document.querySelector('.autoexcel')
+		var table = new Autoexcel()
+
+		var text = document.querySelector('.bar')
+		gento.addEventListener('click', e => {
+			table.init(text.textContent)
+			table.autotable()
+		})
+
+		genback.addEventListener('click', e => {
+			text.innerHTML = table.parseTable()
+		})
+
+		autoexcel.addEventListener('click', e => {
+			table.autoFile('datatab')
+		})
+	</script>
+</body>
+
+</html>
