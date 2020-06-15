@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>markdown</title>
+
+  <link rel="stylesheet" href="css/markdown.css">
+  </link>
+  <link rel="stylesheet" href="css/monokai_sublime.min.css">
+  </link>
+  <link rel="icon" type="image/x-icon" href="image/logo.jpg">
+  </link>
+  <link rel="stylesheet" href="css/index.css">
+  </link>
+
+  <script src="js/marked.min.js"></script>
+  <script src="js/demo.js"></script>
+  <script src="js/drag.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/highlight.site.pack.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://highlightjs.org/static/highlight.site.pack.js"></script> -->
+</head>
+
+<body>
+  <script>
+    /*-------------------------- +
+       获取id, class, tagName
+      +-------------------------- */
+    var get = {
+      byId: function (id) {
+        return typeof id === "string" ? document.getElementById(id) : id
+      },
+      byClass: function (sClass, oParent) {
+        var aClass = [];
+        var reClass = new RegExp("(^| )" + sClass + "( |$)");
+        var aElem = this.byTagName("*", oParent);
+        for (var i = 0; i < aElem.length; i++) reClass.test(aElem[i].className) && aClass.push(aElem[i]);
+        return aClass
+      },
+      byTagName: function (elem, obj) {
+        return (obj || document).getElementsByTagName(elem)
+      }
+    };
+
+    var dragMinWidth = 200;
+    /*-------------------------- +
+      改变大小函数
+     +-------------------------- */
+    function resize(oParent, handle, isLeft, isTop, lockX, lockY) {
+      handle.onmousedown = function (event) {
+
+        var event = event || window.event;
+        var disX = event.clientX - handle.offsetLeft;
+        var iParentLeft = oParent.offsetLeft;
+        var iParentWidth = oParent.offsetWidth;
+
+        document.onmousemove = function (event) {
+          var event = event || window.event;
+
+          var iL = event.clientX - disX;
+          var maxW = document.documentElement.clientWidth - oParent.offsetLeft - 2;
+          var iW = isLeft ? iParentWidth - iL : handle.offsetWidth + iL;
+
+          isLeft && (oParent.style.left = iParentLeft + iL + "px");
+
+          iW < dragMinWidth && (iW = dragMinWidth);
+          iW > maxW && (iW = maxW);
+          lockX || (oParent.style.width = iW + "px");
+
+          if ((isLeft && iW == dragMinWidth)) document.onmousemove = null;
+
+          var oDrag = document.getElementById("drag");
+          var lineBox = document.getElementById("textAreaWithLines");
+          var textarea = document.getElementById("codeTextarea");
+          var contentBox = document.getElementById('contentBox');
+
+          textarea.style.width = (oDrag.offsetWidth - 55) + "px";
+          lineBox.style.width = oDrag.offsetWidth + "px";
+
+          contentBox.style.left = oDrag.offsetWidth + "px";
+          contentBox.style.width = document.documentElement.clientWidth - oDrag.offsetWidth + "px";
+
+          return false;
+        };
+
+        document.onmouseup = function () {
+          document.onmousemove = null;
+          document.onmouseup = null;
+        };
+
+        return false;
+      }
+    };
+
+    window.onload = window.onresize = function () {
+      var oDrag = document.getElementById("drag");
+      var textarea = document.getElementById("codeTextarea");
+      var contentBox = document.getElementById('contentBox');
+      var oR = get.byClass("resizeR", oDrag)[0];
+      //右边
+      resize(oDrag, oR, false, false, false, false);
+      //调整内容宽度
+      textarea.style.width = (oDrag.offsetWidth - 55) + "px";
+      contentBox.style.width = document.documentElement.clientWidth - oDrag.offsetWidth + "px";
+    }
+  </script>
+  <section>
+    <div class="head">
+      <div class="logo">MarkDown</div>
+      <div class="desc">
+        <button id="view">预览</button>
+        <button id="save">保存</button>
+        <button id="down">下载</button>
+      </div>
+    </div>
+    <div id="box">
+      <div id="drag">
+        <div class="resizeR"></div>
+        <div class="cursorP">0</div>
+        <div class="lineNums">0</div>
+
+        <div id="codeTextarea" contenteditable="true">
+        </div>
+      </div>
+      <div  id="contentBox">
+        <div class="viewBox"></div>
+      </div>
+    </div>
+  </section>
+</body>
+<script>
+  var cursorP = document.querySelector('.cursorP'),
+    cursorL = document.querySelector('.cursorL'),
+    lineNums = document.querySelector('.lineNums'),
+    viewBox = document.querySelector('.viewBox'),
+
+    
+    codeTextarea = document.getElementById('codeTextarea'),
+    contentBox = document.getElementById('contentBox'),
+    down = document.getElementById('down'),
+    drag = document.getElementById('drag'),
+    save = document.getElementById('save'),
+    view = document.getElementById('view')
+  var enterFlag = false
+
+  var init = function () {
+    let textDemo = localStorage.getItem('demo')
+    creatElements('codeTextarea', textDemo, lineNums)
+    viewBox.innerHTML = marked(textDemo)   //投影
+    createTextAreaWithLines('codeTextarea', Number(lineNums.innerText));  //创建行号
+  }
+
+  //初始化
+  init()
+
+  // JavaScript 获取按键，并屏蔽系统 Window 事件
+  window.document.onkeydown = onkeydown
+  function onkeydown(event) {
+    event = (event) ? event : window.event
+    if (event.keyCode == 9) { //tab
+      event.returnValue = false;
+    }
+  }
+
+  //鼠标事件
+  codeTextarea.addEventListener('mouseup', e => {
+    e.preventDefault()
+    var num = getNodeIndex(e.target)
+    cursorP.innerText = num
+    lineStyles(num)
+  })
+
+  codeTextarea.addEventListener('select', e => {
+    e.preventDefault()
+    if (document.selection) {
+      var range = document.body.createTextRange();
+      range.moveToElementText(codeTextarea);
+      range.select();
+    } else if (window.getSelection) {
+      var range = document.createRange();
+      range.selectNodeContents(codeTextarea);
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+    }
+  })
+
+  //键盘事件
+  codeTextarea.addEventListener('keyup', e => {
+    e.preventDefault()
+    var text = e.target.innerText
+
+    var num = Number(cursorP.innerText)    //当前光标所在位置
+    let nums = Number(lineNums.innerText)  //总共多少行
+
+    //行号更改、样式 
+    var echild = codeTextarea.children[num].innerText
+
+    //delete,up
+    if ((e.keyCode == 8 && echild == '\n') || e.keyCode == 38) {
+      if (num > 0) {
+        cursorP.innerText = num - 1
+      }
+      if(e.keyCode == 8 && echild == '\n'){
+        enterFlag = true
+      }else{
+        enterFlag = false
+      }
+    }
+    //enter,down
+    if (e.keyCode == 13 || e.keyCode == 40) {
+
+      if (num < nums && e.keyCode == 40) {
+        cursorP.innerText = num + 1
+      } else {
+        lineNums.innerText = nums + 1
+        cursorP.innerText = num + 1
+      }
+    }
+    //tab
+    if (e.keyCode == 9) {
+      codeTextarea.children[num].innerText = codeTextarea.children[num].innerText + '    '
+    }
+
+    //投影
+    reCreatelines('lineObj', Number(lineNums.innerText)) //重建行号xmh
+
+    localStorage.setItem('edite', text)//对象转字符串
+
+    reAreastyle(e.target)
+    lineStyles(Number(cursorP.innerText))
+    viewBox.innerHTML = marked(text)
+    hljs.initHighlightingOnLoad()
+
+    if (enterFlag) {
+      lineNums.innerText = nums - 1
+    }
+  })
+
+  //同步滚动, 编辑和预览
+  codeTextarea.addEventListener('scroll', e =>{
+    e.preventDefault()
+    var lineObj = document.getElementById('lineObj')
+    var scrollTopMax1 = lineObj.clientHeight - codeTextarea.clientHeight 
+    var scrollTopMax2 = viewBox.clientHeight - contentBox.clientHeight 
+    var scale = scrollTopMax2 / scrollTopMax1
+
+    contentBox.scrollTop = codeTextarea.scrollTop * scale
+  })
+
+  contentBox.addEventListener('scroll', e =>{
+    e.preventDefault()
+    var lineObj = document.getElementById('lineObj')
+    var scrollTopMax1 = lineObj.clientHeight - codeTextarea.clientHeight 
+    var scrollTopMax2 = viewBox.clientHeight - contentBox.clientHeight 
+    var scale = scrollTopMax1 / scrollTopMax2
+
+    codeTextarea.scrollTop =  contentBox.scrollTop * scale
+  })
+
+  //临时保存localStorage
+  save.addEventListener('click', e => {
+    localStorage.setItem('save', localStorage.getItem('edite'))
+  })
+
+  //下载到本地
+  down.addEventListener('click', e => {
+    var filename = 'md' + randomStr(12) + '.md'
+    var text = codeTextarea.innerText
+
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+
+    element.style.display = 'none';
+    document.body.appendChild(element);
+
+    element.click();
+    document.body.removeChild(element);
+  })
+
+  //新窗口预览
+  view.addEventListener('click', e => {
+    var text = marked(codeTextarea.innerText)
+    var win = window.open();  //打开新的空白窗口
+    win.window.document.write(text);  //在新窗口中输出提示信息
+
+    var hlgtjs = document.createElement('script')
+    var hlgtcss = document.createElement('link')
+
+    // hlgtjs.src = 'js/highlight.site.pack.js'
+    hlgtjs.src = 'https://highlightjs.org/static/highlight.site.pack.js'
+
+    hlgtcss.href = 'css/markdown.css'
+    hlgtcss.rel = "stylesheet"
+
+    win.window.document.head.appendChild(hlgtjs)
+    win.window.document.head.appendChild(hlgtcss)
+
+    var hltjs = document.createElement('script')
+    hltjs.innerHTML = 'hljs.initHighlightingOnLoad()'
+    win.window.document.body.appendChild(hltjs)
+
+    win.focus();  //让原窗口获取焦点
+  })
+</script>
+
+</html>
