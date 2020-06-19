@@ -1,0 +1,57 @@
+extends head-layout.pug
+
+append header
+  div.container-fluid.container-wd.mb-5
+    h1 欢迎大家来投票
+    ul.list-group.btn-lg#voteslist
+      each vote in votes
+        li(class="list-group-item align-items-center" id=vote.id)
+          div.card-header#vote-title.justify-content-between.d-flex
+            p= vote.title
+            - let count = 0
+            each voteup in voteups
+              - var coutFlag = voteup.voteid == vote.id ? true : false
+              if coutFlag
+                - count++
+            - var optorvote = vote.userid == user.id ? true : false
+              if optorvote
+                b.badge.badge-primary.badge-pill.bg-success(style="width:50px; height:30px;")= count
+              else
+                b.badge.badge-primary.badge-pill(style="width:50px; height:30px;")= count
+          div.card-header(data-userid= vote.userid)= vote.userid
+            each use in users
+              - var flag = use.id == vote.userid ? true : false
+              if flag
+                each im in imgs
+                  - var sign = im.id == use.avatarid ? true : false
+                  if sign
+                    img.rounded-circle.img-logo(src='/'+ img.path)
+                    - count++
+
+
+   
+  script.
+    var lists = document.querySelector('#voteslist')
+    lists.onclick = e =>{
+      e.preventDefault()
+      console.log(e.target)
+      if(e.target.matches('#vote-title') ){
+        location.href = '/vote/' + e.target.parentNode.id
+      }
+    }
+    var imgs = document.querySelector('.rounded-circle')
+        //- div#accordionExample.accordion
+    //-   each vote in votes
+    //-     div.card
+    //-       div#headingOne.card-header
+    //-         p.mb-0
+    //-           button.btn.btn-link(type='button', data-toggle='collapse', data-target='#collapseOne', aria-expanded='true', aria-controls='collapseOne')= vote.title
+    //-       div#collapseOne.collapse.show(aria-labelledby='headingOne', data-parent='#accordionExample')
+    //-         .card-body
+    //-           - var optorvote = vote.userid == user.id ? true : false
+    //-           if optorvote
+    //-             img.rounded-circle(src='/'+ img.path)
+
+
+
+  

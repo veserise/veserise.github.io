@@ -1,0 +1,35 @@
+extends layout.pug
+
+block content
+  .container-login100
+    .wrap-login100
+      .login100-form-title(style='background-image: url(images/img_01.png);')
+        span.login100-form-title-1 注 册
+      form(action="/register" method="post" class="shadow p-3 mb-5 bg-white rounded" enctype="multipart/form-data")
+        div.from-group
+          label(for="exampleFormControlInput1") 用户名
+          input(type="text" name="name").form-control#exampleFormControlInput1
+        div.form-group
+          label(for="exampleFormControlInput2") 密 码
+          input(type="password" name="pwd").form-control#exampleFormControlInput2
+        div.form-group
+          label(for="exampleFormControlInput3") 邮 箱
+          input(type="text" name="email").form-control#exampleFormControlInput3
+        div(class="input-group mb-3")
+          div.input-group-prepend
+            span.input-group-text#inputGroupFileAddon01 头 像 
+          div.custom-file 
+            input.custom-file-input(type="file" aria-describedby="inputGroupFileAddon01" id="inputGroupFile01"  name="avatar" multiple)
+            label.custom-file-label(for="inputGroupFile01") choose file
+
+        button(type="submit" class="btn btn-outline-success") 提 交
+        a.card-link(href="/login" class="float-right p-2") 登 陆
+
+  script.
+    var fileInput =  document.querySelector('#inputGroupFile01')
+    fileInput.onchange = e => {
+      e.preventDefault()
+      console.log( e)
+      var img = document.querySelector('.custom-file-label')
+      img.innerHTML = e.target.value
+    }

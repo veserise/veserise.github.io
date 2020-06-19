@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>create vote</title>
+  <link rel="stylesheet" type="text/css" href='/stylesheets/style.css'>
+  <link rel="stylesheet" type="text/css"href="/stylesheets/bootstrap.min.css">
+</head>
+<body>
+   <div id="app">
+      <h4>创建投票</h4> 
+      <div class="form-group" >
+        <label for="exampleFormControlInput1" > 标 题</label>
+        <input type='text' placeholder='标题'  v-model='vote.title'  class="form-control" id="exampleFormControlInput1" >
+      </div>
+      <div class="form-group">
+        <label for="exampleFormControlInput2"> 描 述 </label>
+        <input type='text' v-model='vote.desc' placeholder="输入描述"  class="form-control" id="exampleFormControlInput2" >
+      <div class="form-group" >
+        <p> 答案集合 </p>
+        <div class="bg-light mx-auto">
+          <div class="form-group" v-for="(option ,idx) of vote.options">
+            <label for="exampleFormControlInput3">{{ '选项' +( idx + 1) }}</label>
+            <button class="remove-option btn btn-outline-success btn-sm"  @click="vote.options.splice(idx, 1)"> x </button> 
+            <input type='text' :placeholder="'选项' +(idx+1)" v-model='vote.options[idx]' class="form-control#exampleFormControlInput3" >
+          </div>
+          <div class="form-group" id="add-option-wrap" >
+            <button type="button" @click="addoption"> 添加选项 </button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" >
+        <label for="exampleFormControlInput5"> 截止时间</label>
+        <input type='datetime-local' placeholder='截止时间' v-model='vote.deadline' class="form-control#exampleFormControlInput5" >
+      </div>
+      <div class="form-group" >
+        <label>匿名投票</label>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" v-model='vote.anonymouse' value='0' id="inlineRadio1">
+          <label  class="form-check-label" for="inlineRadio1" >是</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" v-model='vote.anonymouse' value= '1' id="inlineRadio2">
+          <label class="form-check-label" for="inlineRadio2"> 非 </label>
+        </div>
+      <div class="form-group" >
+        <label>选择类型</label>
+        <select class="custom-select" v-model='vote.singleSelection'>
+          <option value='0' > 单 选</option>
+          <option value='1' > 多 选</option>
+        </select>
+      </div>
+      <button class="btn btn-outline-success" @click="submit"> 确 定</button>
+   </div>
+  <script src="/assets/vue.js"></script>
+  <script src="/assets/axios.min.js"></script>
+  <!-- <script src="bootstrap.min.js"></script> -->
+  <script>
+
+    var app = new Vue({
+      el: '#app',
+      data:{
+        vote:{
+          title:'',
+          desc:'',
+          options:['',''],
+          deadline: new Date(Date.now() + 86400000).toISOString().slice(0,16),
+          anonymouse:'1',
+          singleSelection:'0',
+        }
+      },
+      methods: {
+        async submit(){
+          var request = await axios.post('/create-vote', this.vote)
+          var data = request.data
+          location.href ='/vote.html?id='+ data.id
+        },
+        addoption(){
+          this.vote.options.push('')
+        }
+      },
+
+    })
+  </script>
+</body>
+</html>

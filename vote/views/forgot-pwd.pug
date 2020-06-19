@@ -1,0 +1,7 @@
+extends layout.pug
+
+block content
+  form(action="/forgot" method="post" class="shadow p-3 mb-5 bg-white rounded")
+      span 请输入邮箱
+      input(type="text", name="eamil")
+      button(type="submit") 确定

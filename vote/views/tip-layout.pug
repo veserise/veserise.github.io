@@ -1,0 +1,26 @@
+extends head-layout.pug
+
+append header
+  #exampleModalCenter.modal.fade(tabindex='-1', role='dialog', aria-labelledby='exampleModalCenterTitle', aria-hidden='true')
+  .modal-dialog.modal-dialog-centered(role='document')
+    .modal-content
+      .modal-header
+        h5#exampleModalCenterTitle.modal-title Modal title
+        button.close(type='button', data-dismiss='modal', aria-label='Close')
+          span(aria-hidden='true') &times;
+      .modal-body
+        h5 Popover in a modal
+        p
+          | This 
+          a.btn.btn-secondary.popover-test(href='#', role='button', title='Popover title', data-content='Popover body content is set in this attribute.') button
+          |  triggers a popover on click.
+        hr
+        h5 Tooltips in a modal
+        p
+          a.tooltip-test(href='#', title='Tooltip') This link
+          |  and 
+          a.tooltip-test(href='#', title='Tooltip') that link
+          |  have tooltips on hover.
+      .modal-footer
+        button.btn.btn-secondary(type='button', data-dismiss='modal') Close
+        button.btn.btn-primary(type='button') Save changes

@@ -1,0 +1,78 @@
+extends head-layout.pug
+
+append header
+  form(action='/create-vote' method='POST' class="shadow p-3 mb-5 bg-white rounded")
+    h4 创建投票
+    div.form-group
+      label(for="exampleFormControlInput1") 标 题
+      input(type='text' placeholder='标题', name='title').form-control#exampleFormControlInput1
+    div.form-group
+      label(for="exampleFormControlInput2") 描 述
+      input(type='text' name='desc' placeholder="输入描述").form-control#exampleFormControlInput2
+    div.form-group
+      p 答案集合
+      div.bg-light.mx-auto
+        div.form-group
+          label(for="exampleFormControlInput3")
+          button.remove-option(type='button' class="btn btn-outline-success btn-sm")  x
+          input(type='text' placeholder='选项' name='options').form-control#exampleFormControlInput3
+        div.form-group
+          label(for="exampleFormControlInput4")
+          button.remove-option(type='button' class="btn btn-outline-success btn-sm") x
+          input(type='text' placeholder='选项' name='options').form-control#exampleFormControlInput4
+        div.form-group#add-option-wrap
+          button(type="button")#add-option  添加选项
+    div.form-group
+      label(for="exampleFormControlInput5") 截止时间
+      input(type='datetime-local' placeholder='截止时间' name='deadline').form-control#exampleFormControlInput5
+    div.form-group
+      label 匿名投票
+      div(class="form-check form-check-inline")
+        input.form-check-input(type="radio" name='anonymouse' value='0' )#inlineRadio1
+        label.form-check-label(for="inlineRadio1") 是
+      div(class="form-check form-check-inline")
+        input.form-check-input(type="radio" name='anonymouse' value= '1')#inlineRadio2
+        label.form-check-label(for="inlineRadio2") 非
+    div.form-group
+      label 选择类型
+      select.custom-select(name='singleSelection')
+        option(value='1') 单 选
+        option(value='2') 多 选
+    button(type="submit" class="btn btn-outline-success") 确 定
+
+  script.
+    var form = document.querySelector('.bg-light')
+    var addOptionsbtn = document.querySelector('#add-option')
+    var addOptionsbtn = document.querySelector('#add-option')
+    var addOptionswrap = document.querySelector('#add-option-wrap')
+    var options = document.querySelectorAll('.remove-option')
+
+    form.addEventListener('click', e=>{
+      e.preventDefault()
+      if(e.target.matches('.remove-option')){
+        e.target.parentNode.remove()
+         option()
+      }
+    })
+    option()
+    function option(){
+      var options = document.querySelectorAll('.remove-option')
+      for(let i = 0; i < options.length; i++){
+          options[i].parentNode.firstChild.innerHtml = ''
+          options[i].parentNode.firstChild.textContent ='选项' + (i + 1)
+        }
+    }
+
+    addOptionsbtn.addEventListener('click', e=>{
+      e.preventDefault()
+      var options = document.querySelectorAll('.remove-option')
+      let i = options.length + 1
+      var warp = document.createElement('div')
+      warp.innerHTML = `<div class="form-group bg-light">
+        <label for="exampleFormControlInput${i}"></label>
+        <button class="remove-option btn btn-outline-success btn-sm" type='button'> x </button>
+        <input type='text' placeholder='选项' name='options'class="form-control" id="exampleFormControlInput${i}"> `
+      form.insertBefore(warp.firstChild, addOptionswrap)
+      option()
+    })
+

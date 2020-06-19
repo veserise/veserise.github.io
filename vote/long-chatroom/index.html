@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="msglist">
+    <input type="text" id="msgput">
+    <button onclick="send()"></button>
+  </div>
+
+  <script>
+    var msg = document.getElementById('msgput')
+    var msglist = document.getElementById('msglist')
+    function getMsg() {
+      var xhr = new XMLHttpRequest()
+      xhr.open('post', '/msg')
+      xhr.onload = () => {
+        msglist.innerHTML +=xhr.responseText
+        getMsg()
+      }
+      xhr.send()
+    }
+    getMsg()
+
+
+    function send(){
+      var xhr = new XMLHttpRequest()
+      xhr.open('get', '/msg')
+      xhr.setRequestHeader('Content-Type', 'x-www-form-urlencoded')
+      xhr.onload = () => {}
+      xhr.send()
+    }
+
+  </script>
+</body>
+
+</html>

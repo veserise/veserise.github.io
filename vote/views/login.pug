@@ -1,0 +1,54 @@
+extends layout.pug
+
+block content
+  .container-login100
+    .wrap-login100
+      .login100-form-title(style='background-image: url(images/img_01.png);')
+        span.login100-form-title-1 登 陆
+      form(action="/login" method="post" id="loginForm" class="shadow p-5 mb-3 bg-white rounded")
+        div.form-group
+          label(for="exampleFormControlInput1") 用户名
+          input.form-control(type="text", name="name" placeholder="输入用户名")#exampleFormControlInput1
+        div.form-group
+          label(for="exampleFormControlInput2") 密  码 
+          input.form-control(type="password" name="pwd" placeholder="输入密码")#exampleFormControlInput2
+        div.form-group
+          label(for="exampleFormControlInput3") 验证码
+          input.form-control(type="password" name="captcha")#exampleFormControlInput3
+          img(src="/captcha" class="figure-img img-fluid rounded")
+          a.card-link(href="/forgot"  class="float-right p-3") 忘记密码
+        button(type="submit" class="btn btn-outline-success") 确 定
+        a.card-link(href="/register" class="float-right p-3") 注 册
+  script.
+    var img =  document.querySelector('img')
+    img.onclick =  e => {
+      e.preventDefault()
+      let src = img.src
+      img.src = ''
+      setTimeout(()=>{
+        img.src= src
+      },1)
+    }
+
+    loginForm.onsubmit = e => {
+      e.preventDefault()
+      var name = document.querySelector('[name="name"]').value
+      var pwd = document.querySelector('[name="pwd"]').value
+      var captcha = document.querySelector('[name="captcha"]').value
+      
+      var xhr = new XMLHttpRequest()
+      xhr.open('POST', '/login')
+      xhr.onload = () => {
+        var data = JSON.parse(xhr.responseText)
+        if (data.code == 0) {
+          alert('登陆成功，页面跳转')
+          location.href = '/'
+        } else {
+          alert('登陆失败')
+          img.click()
+        }
+      }
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8')
+      xhr.send('name=' + name + '&pwd=' + pwd +'&captcha=' +captcha)
+    }
+    

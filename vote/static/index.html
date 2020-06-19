@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title> 投票系统 </title>
+  <link rel="stylesheet" type="text/css" href='/css/style.css'>
+  <link rel="stylesheet" type="text/css" href="/css/bootstrap.min.css">
+</head>
+
+<body>
+
+  <div id="app" class="container-fluid pl-0 pr-0">
+    <router-view></router-view>
+  </div>
+
+  
+
+  <script src="/assets/vue.js"></script>
+  <script src="/assets/axios.min.js"></script>
+  <script src="/assets/lodash.min.js"></script>
+  <script src="/assets/vue-router.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    const api = axios.create({
+      baseURL: '/api/',
+      widthCredentials: true,
+    })
+
+    var index = {
+      template: `
+        <div>
+          <div v-if="user">
+            <vote></vote>
+          </div>
+
+          <div v-else>
+            <login></login>
+          </div>
+        </div>
+      `,
+      data() {
+        return {
+          user: {
+            name: ''
+          }
+        }
+      },
+      async mounted() {
+        try {
+          var request = await api.get('/userinfo')
+          this.user = request.data
+        } catch (e) {
+          this.$route.push('/login')
+        }
+      }
+    }
+
+    var login = Vue.component('login', {
+      template: `
+          <div class="container-login100">
+            <div class="wrap-login">
+              <div class="login100-form-title" style='background-image: url(images/img_01.png);'>
+                <span class="login100-form-title-1" > 登 陆 </span>
+              </div>
+              <div class="form-group  mt-3" >
+                <label> 用户名 </label>
+                <input class="form-control" type="text" v-model="loginInfo.name" placeholder="输入用户名">
+              </div>
+              <div class="form-group" >
+                <label> 密  码 </label>
+                <input class="form-control" type="password" v-model="loginInfo.pwd" placeholder="输入密码">
+              </div>
+              <div  class="form-group" >
+                <label> 验证码 </label>
+                <input class="form-control" type="text" v-model="loginInfo.captcha">
+                <img :src="capchaUrl" class="figure-img img-fluid rounded" @click="changeCaptcha">
+                <router-link to="/change-pwd" class="float-right p-3">忘记密码</router-link>
+              </div>
+              <button type="submit" class="btn btn-outline-success" @click="submit"> 确 定 </button>
+              <router-link to="/register" class="float-right p-3">注 册</router-link>
+            </div>
+        </div>
+      `,
+      data() {
+        return {
+          capchaUrl: '/api/captcha?' + Date.now(),
+          loginInfo: {},
+        }
+      },
+      methods: {
+        async submit() {
+          try{
+            var request = await api.post('/login', this.loginInfo, {
+              withCredentials: true,
+            })
+            var data = request.data
+            this.$router.push('/vote')
+
+          }catch(e){}
+        },
+        changeCaptcha() {
+          this.capchaUrl = '/api/captcha?' + Date.now()
+        }
+      }
+    })
+
+    var register = Vue.component('register', {
+      template: `
+        <div class="container-login100">
+          <div class="wrap-login">
+            <div class="login100-form-title" style='background-image: url(images/img_01.png);'>
+              <span class="login100-form-title-1" > 注 册 </span>
+            </div>
+            <div class="form-group mt-3" >
+              <label> 用户名</label>
+              <input  class="form-control" type="text" v-model="info.name" placeholder="输入用户名">
+            </div>
+            <div class="form-group" >
+              <label> 邮 箱 </label>
+              <input class="form-control" type="text" v-model="info.email" placeholder="输入邮箱">
+            </div>
+            <div class="form-group" >
+              <label> 密  码 </label>
+              <input class="form-control" type="password" v-model="info.pwd" placeholder="输入密码">
+            </div>
+            <div  class="input-group mb-3" >
+              <div class="input-group-prepend">
+                <span class="input-group-text" id="inputGroupFileAddon01"> 头 像 </span>
+              </div>
+              <div class="custom-file"> 
+                <input class="custom-file-input" type="file" aria-describedby="inputGroupFileAddon01" id="inputGroupFile01"  v-model="info.avatar" multiple>
+                <label class="custom-file-label" for="inputGroupFile01"> choose file </label>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-outline-success" @click="submit"> 确 定 </button>
+            <router-link to="/login" class="float-right p-3">登 陆</router-link>
+          </div>
+        </div>
+      `,
+      data() {
+        return {
+          info: {
+            name: '',
+            eamil: '',
+            pwd: '',
+            avatar: ''
+          }
+        }
+      },
+      methods: {
+        async submit() {
+          try {
+            var request = await api.post('/register', this.info)
+            this.$router.push('/login')
+          } catch (e) {
+            console.log(e)
+          }
+        }
+      }
+    })
+
+    var logout = Vue.component('logout', {})
+
+    var createVote = {
+      template: `
+        <div>
+          <h4>创建投票</h4> 
+          <div class="form-group" >
+            <label for="exampleFormControlInput1" > 标 题</label>
+            <input type='text' placeholder='标题' v-model='vote.title'  class="form-control" id="exampleFormControlInput1" >
+          </div>
+          <div class="form-group">
+            <label for="exampleFormControlInput2"> 描 述 </label>
+            <input type='text' v-model='vote.desc' placeholder="输入描述"  class="form-control" id="exampleFormControlInput2" >
+          <div class="form-group" >
+            <p> 答案集合 </p>
+            <div class="bg-light mx-auto">
+              <div class="form-group" v-for="(option ,idx) of vote.options">
+                <label for="exampleFormControlInput3">{{ '选项' +( idx + 1) }}</label>
+                <button class="remove-option btn btn-outline-success btn-sm"  @click="vote.options.splice(idx, 1)"> x </button> 
+                <input type='text' :placeholder="'选项' +(idx+1)" v-model='vote.options[idx]' class="form-control#exampleFormControlInput3" >
+              </div>
+              <div class="form-group" id="add-option-wrap" >
+                <button type="button" @click="addoption"> 添加选项 </button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group" >
+            <label for="exampleFormControlInput5"> 截止时间</label>
+            <input type='datetime-local' placeholder='截止时间' v-model='vote.deadline' class="form-control#exampleFormControlInput5" >
+          </div>
+          <div class="form-group" >
+            <label>匿名投票</label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" v-model='vote.anonymouse' value='0' id="inlineRadio1">
+              <label  class="form-check-label" for="inlineRadio1" >是</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" v-model='vote.anonymouse' value= '1' id="inlineRadio2">
+              <label class="form-check-label" for="inlineRadio2"> 非 </label>
+            </div>
+          <div class="form-group" >
+            <label>选择类型</label>
+            <select class="custom-select" v" model='vote.singleSelection'>
+              <option value='0' > 单 选</option>
+              <option value='1' > 多 选</option>
+            </select>
+          </div>
+          <router-link class="btn btn-outline-success" @click="submit" > 确 定</router-link>
+        </div>
+      `,
+      methods: {
+        async submit() {
+          var request = await api.post('/create-vote', this.vote, {
+            widthCredentials: true
+          })
+          var data = request.data
+          this.$router.push('/vote/' + data.id)
+          // location.href ='/vote.html?id='+ data.id
+        },
+        addoption() {
+          this.vote.options.push('')
+        }
+      },
+      data() {
+        return {
+          createInfo: {
+            title: '',
+            src: '',
+            options: ['', ''],
+            deadline: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+            annonymouse: '1',
+            selectSingle: '0'
+          },
+        }
+      },
+    }
+
+    var forgot = {
+      template: `
+        <div>
+          <button class="btn btn-outline-success" @click="$route.go(-1)">返 回</button>
+          <div>
+            <div class="form-group">
+              <label>输入邮箱</label>
+              <input placeholder="输入邮箱" v-model="email" type="text">
+            </div>
+            <button class="btn btn-outline-success" @click="submit">确 定</button>
+          </div>
+        </div>
+      `,
+      methods: {
+        submit() {
+          try{
+            api.post('/forgot', this.email)
+          }catch(e){
+            this.$route.push('/login')
+          }
+        },
+      },
+      data(){
+        return {
+          email: '',
+        }
+      }
+    }
+
+    var changePwd = {
+      template: `
+        <div>
+          <button class="btn btn-outline-success" @click="$route.go(-1)">返 回</button>
+          <div>
+            <h3> 此页面可以重置 {{ user.name }} 的密码  </h3>
+            <div class="form-group">
+              <label for="exampleFormControlInput1"> 输入密码 </label>
+              <input placeholder="输入密码" v-model="pwd1" type="password"  class="form-control" id="exampleFormControlInput1">
+            </div>
+            <div class="form-group">
+              <label for="exampleFormControlInput2"> 确定密码 </label>
+              <input placeholder="确定密码" v-model="pwd2" type="password" class="form-control" id="exampleFormControlInput2">
+            </div>
+            <button class="btn btn-outline-success" @click="submit">确 定</button>
+          </div>
+        </div>
+      `,
+      async mounted(){
+        try{
+          const token = this.$route.params.token
+          const request = await api.get('/change-pwd/'+ token)
+          this.user = request.data
+          this.token = token
+
+        } catch(e){} 
+      },
+      methods: {
+        submit() {
+          try{
+            if( this.pwd1 == this.pwd2){
+              api.post('/change-pwd/'+ this.token , this.pwd1)
+              this.$route.push('/login')
+            }else{
+              alert('两次密码不一致')
+              this.$route.push('/change-pwd/'+ this.token)
+            }
+          }catch(e){}
+        },
+      },
+      data(){
+        return {
+          pwd1:'',
+          pwd2: '',
+          user: {},
+          token: ''
+        }
+      }
+    }
+
+    var vote = Vue.component('vote', {
+      template: `
+        <div>
+          <vote-head></vote-head>
+          <div class="container-fluid container-wd mb-5">
+            <h1> 欢迎大家来投票</h1>
+            <ul class="list-group btn-lg">
+              <li class="list-group-item align-items-center" v-for="(info , idx) of votesinfo" :key="idx">
+                <router-link :to="'/vote/'+ info.id">
+                  <div class="card-header justify-content-between d-flex"> 
+                    <p> {{ info.title }}</p>
+                    <b class="badge badge-primary badge-pill bg-success" style="width:50px; height:30px;" > {{ count(info.id) }}票 </b>
+                  </div> 
+                </router-link>
+              </li>
+            </ul>
+          </div>
+          <vote-footer></vote-footer>
+        </div>
+      `,
+     
+      watch: {
+        $route(to, from) {
+          this.mounted()
+        },
+      },
+
+      async mounted() {
+        try{
+          const reqVote = await api.get('/vote')
+  
+          this.votesinfo = reqVote.data.votes
+          this.options = reqVote.data.options
+          this.voteups = reqVote.data.voteups
+
+        }catch (e){
+          console.log(e)
+        }
+      },
+      data() {
+        return {
+          votesinfo: {},
+          options: {},
+          voteups: {},
+          countarray: [],
+        }
+      },
+      methods: {
+        count(id) {
+          let count = 0
+          if(this.voteups != '{}'){
+            this.voteups.map(it => {
+              if ( id == it.voteid) {
+                count++
+              }
+            })
+          }
+          return count
+        },
+      },
+    })
+    
+    var voteinfo = {
+      template: `
+        <div>
+            <vote-head></vote-head>
+            <div class="container-fluid container-wd mb-5" > 
+              <div class="shadow p-3 mb-5 mt-5 bg-white rounded"> 
+                <blockquote class="blockquote mt-2" >
+                  <h4 class="display-4">{{ voteinfo.vote.title }}</h4>
+                  <p class="blockquote-footer mt-3"> {{ voteinfo.vote.desc }}
+                    <b class="text-success ml-4" > {{ voteinfo.vote.singleSelection == true ? '[单选]' : '[多选]' }}</b>
+                  </p>
+                </blockquote>
+                <div class="form-group mt-5" >
+                  <ul class="list-group" id="option-list">
+                    <li class="list-group-item"  @click="voteup(option.id)" v-for="(option,idx) in voteinfo.options" @key="idx" >
+                      <input class="toggle" type="radio" id="select" name="select"  @click="voteup(option.id)">
+                      <label class="mb-3 select-label" for="select"> {{ option.content }} - {{ summary[option.id].length }} 票 <span> {{  ratioSummary[option.id] * 100 + '%'}} </span></label>
+                      <div class="ratio" style="height: 3px;background: red;" :style="{width: ratioSummary[option.id] * 100 + '%'}"></div>
+                      <div class="card-header">
+                        <img v-for="(img, indx) of imgsPath" :src=" '/'+ img" class="rounded-circle img-logo"  @key="indx"/>
+                      </div>
+                    </li>
+                  </ul>
+                  <button id="btn_back" class="btn btn-outline-success mt-3 float-left" @click="back"> 返 回 </button> 
+                  <button id="btn_next" class="btn btn-outline-success mt-3 float-right">下一题</button>
+                </div>
+                <p class="lead">{{ voteinfo.vote.deadline }}</p>
+              </div>
+            </div>
+            <vote-footer></vote-footer>
+        </div>
+      `,
+      async mounted() {
+        try{
+          var id = this.$route.params.id
+          var request = await api.get('/vote/' + id)
+          var data = request.data
+  
+          this.voteinfo = data
+          
+          //获取用户头像
+          this.voteinfo.voteups = _.uniqBy(this.voteinfo.voteups, 'userid')
+          this.voteinfo.voteups.map(it =>{
+            this.imgs.push(it.userid)
+          })
+          this.imgsPath = []
+          this.imgs.map(it =>{
+            this.getImagePath(it)
+          })
+
+
+          //投票实时更新
+          this.socket = io()
+          this.socket.emit('select room', id)
+  
+          this.socket.on('new vote', data => {
+            this.voteinfo.voteups = this.voteinfo.voteups.filter(it => it.userid != data.userid)
+            this.voteinfo.voteups.push(data)
+          })
+          
+        }catch(e){}
+      },
+      data() {
+        return {
+          voteinfo: {
+            vote: {},
+            options: [],
+            voteups: [],
+          },
+          imgs:[],
+          imgsPath:[],
+        }
+      },
+      computed: {
+        summary() {
+          var obj = _.mapValues(_.keyBy(this.voteinfo.options, 'id'), () => [])
+
+          return {
+            ...obj,
+            ..._.groupBy(this.voteinfo.voteups, 'optionid')
+          }
+        },
+        
+        ratioSummary() {
+          return _.mapValues(this.summary, (voteups, voteid) => {
+            if (voteups.length == 0) {
+              return 0
+            }
+            return (voteups.length / this.voteinfo.voteups.length).toFixed(2)
+          })
+        },
+        
+      },
+      methods: {
+        voteup(optionid) {
+          try{
+            api.post('/voteup', {
+              optionid:optionid,
+              voteid: this.voteinfo.vote.id,
+            })
+          }catch(e){}
+        },
+
+       async getImagePath(id){
+          try{
+            var imgsData = await api.get('/imgs/'+ id)
+            var data = imgsData.data
+            if(data.code == -1){
+              this.imgsPath.push('images/img_01.png') 
+            }else{
+              this.imgsPath.push(imgsData.data.info.path) 
+            }
+          }catch(e){}
+        },
+        back(){
+          this.$route.go(-1)
+        }
+      }
+    }
+
+    var voteup = {
+      template: `
+        <div>
+            <div>
+              <h1>{{ voteinfo.vote.title }}</h1>
+              <h3>{{ voteinfo.vote.desc }}</h3>
+            </div>
+            <ul class="options">
+              <li @click="voteup(option.id)" v-for="option in voteinfo.options">
+                {{ option.content }} - {{ summary[option.id].length }} 票
+                <!-- <div class="ratio" style="height: 3px;background: red;" :style="{width: ratioSummary[option.id] * 100 + '%'}"></div> -->
+              </li>
+            </ul>
+        </div>
+      `,
+      async mounted() {
+        var id = this.$route.params.id
+        try{
+          var request = await api.get('/voteinfo/' + id)
+          var data = request.data
+          console.log(data)
+  
+  
+          this.voteinfo = data
+  
+          this.voteinfo.voteups = _.uniqBy(this.voteinfo.voteups, 'userid')
+  
+          this.socket = io()
+          this.socket.emit('select room', id)
+  
+          this.socket.on('new vote', data => {
+            this.voteinfo.voteups = this.voteinfo.voteups.filter(it => it.userid != data.userid)
+            this.voteinfo.voteups.push(data)
+            // this.vote.voteups = _.uniqBy(this.vote.voteups, 'userid')
+          })
+        }catch{}
+
+      },
+      data() {
+        return {
+          voteinfo: {
+            vote: {},
+            options: [],
+            voteups: [],
+          },
+        }
+      },
+      computed: {
+        summary() {
+          var obj = _.mapValues(_.keyBy(this.voteinfo.options, 'id'), () => [])
+
+          return {
+            ...obj,
+            ..._.groupBy(this.voteinfo.voteups, 'optionid')
+          }
+        },
+        ratioSummary() {
+          return _.mapValues(this.summary, (voteups, voteid) => {
+            if (voteups.length == 0) {
+              return 0
+            }
+            return voteups.length / this.voteinfo.voteups.length
+          })
+        }
+      },
+      methods: {
+        voteup(optionid) {
+          try{
+            api.post('/voteup', {
+              optionid,
+              voteid: this.voteinfo.vote.id,
+            })
+            
+          }catch(e){}
+        }
+      }
+    }
+
+
+    Vue.component('vote-footer', {
+      template: `
+      <footer class="card-footer bg-transparent border-success text-center">
+        <p> 投票系统@2019</p>
+      </footer>
+      `,
+    })
+
+    Vue.component('vote-head', {
+      template: `
+        <header class="card-header border-success">
+          <div class="navbar navbar-expand flex-column flex-md-row bd-navbar head-width mx-auto">
+            <router-link class="navbar-brand logo" to='/'>
+              <img class="d-inline-block align-top" src='/images/img_03.png'  width='100'  height='100' >
+            </router-link>
+            <ul class="navbar-nav flex-row ml-md-auto d-none d-md-flex" >
+              <li class="nav-item mr-2">
+                <img class="rounded-circle img-logo" :src="'/'+ img.path">
+              </li>
+              <li class="nav-item mr-3" >
+                <label class="#" >{{ user.name }} </label>
+              </li>
+              <li class="nav-item mr-3">
+                <router-link class="card-link" to="/register"> 注 册</router-link>
+              </li>
+              <li class="nav-item mr-3" >
+                <router-link class="card-link" to="/create-vote"> 创建投票 </router-link>
+              </li>
+              <li class="nav-item mr-3" >
+                <router-link class="card-link" to="/logout"> 退 出</router-link>
+              </li>
+            </ul>
+          </div>
+        </header>
+      `,
+      async mounted() {
+        try {
+          //获取用户信息
+          let request = await api.get('/userinfo')
+          this.user = request.data.info
+
+          //获取用户头像
+          let imgs = await api.get('/imgs/' + this.user.id)
+          this.img = imgs.data.info
+
+        } catch (e) {}
+      },
+      data() {
+        return {
+          img: {},
+          user: {}
+        }
+      }
+
+    })
+
+
+    //路由表
+    var router = new VueRouter({
+      routes: [{
+        path: '/',
+        component: index
+      }, {
+        path: '/login',
+        component: login
+      }, {
+        path: '/forgot',
+        component: forgot
+      }, {
+        path: '/register',
+        component: register
+      },{
+        path:'/change-pwd/:token',
+        component:changePwd
+      } ,{
+        path: '/vote',
+        component: vote
+      }, {
+        path: '/vote/:id',
+        component: voteinfo,
+      }, {
+        path: '/create-vote',
+        component: createVote
+      }, {
+        path: '/logout',
+        component: logout
+      }
+
+      ],
+
+    })
+
+    var app = new Vue({
+      router: router,
+      el: '#app',
+      data: {
+        loginInfo: {
+          name: '',
+          pwd: '',
+          capcha: ''
+        },
+        register: {
+          name: '',
+          pwd: '',
+          email: '',
+          img: '',
+        },
+        createInfo: {
+          title: '',
+          src: '',
+          options: ['', ''],
+          deadline: new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+          annonymouse: '1',
+          selectSingle: '0'
+        },
+      },
+    })
+
+  </script>
+</body>
+
+</html>
